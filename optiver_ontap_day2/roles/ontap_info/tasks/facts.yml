@@ -7,11 +7,12 @@
       efficiency_policy:          "default"
       percent_snapshot_space:     "5"
       snapshot_policy:            "default"
-      ostype:                     "linux"
+      ostype:                     "{{ lun_type }}"
       space_reserve:              false
       space_allocation:           false
       size_unit:                  "{{ volume_unit }}"
       aggr_target:                "{{ aggregate_name }}"
       volume_name:                "{{ volume_name }}"
       lun_size:                   "{{ volume_size }}"
+      igroup_type:                "{{ igroup_type }}"
     delegate_to: localhost

@@ -21,7 +21,7 @@
     wait_for_completion: True
     comment: ansible created volume
     <<: *auth
-  when: "volume_name not in vol_list"
+  # when: "volume_name not in vol_list"
   delegate_to: localhost
 
 
@@ -44,7 +44,7 @@
     wait_for_completion: True
     comment: ansible created volume
     <<: *auth
-  when: "volume_name not in vol_list"
+  # when: "volume_name not in vol_list"
   delegate_to: localhost
 
 
@@ -59,6 +59,6 @@
     comment: ansible created volume
     <<: *auth
   when:
-    - "volume_name not in vol_list"
+    # - "volume_name not in vol_list"
     - use == "nfs"
   delegate_to: localhost

@@ -1,0 +1,305 @@
+{
+  "location": "amsterdam",
+  "timezone": "Europe/Amsterdam",
+  "snmp_community": "opt0rb1t",
+  "dns": {
+    "domains": "optiver.com",
+    "servers": [
+      "10.131.32.1",
+      "10.131.48.1",
+      "10.131.32.164"
+    ]
+  },
+  "clusters": [
+    {
+      "name": "r2d2",
+      "cluster_mgmt": "r2d2.slash.local",
+      "cluster_mgmt_port": "e0M",
+      "gateway": "10.114.36.254",
+      "ontap_ver": "9.9",
+      "subnet": "255.255.255.0",
+      "switchless": "1",
+      "ntp": [
+        "100.114.36.254"
+      ],
+      "nodes": [
+        {
+          "name": "r2d2-01",
+          "mgmt_ip": "100.114.36.1",
+          "mgmt_subnet": "255.255.255.0",
+          "mgmt_gateway": "100.114.36.254",
+          "sp": "100.114.36.3",
+          "sp_username": "admin",
+          "sp_password": "Netapp12",
+          "sp_subnet": "255.255.255.0",
+          "sp_gateway": "100.114.36.254",
+          "cluster_ports": [
+            {
+              "clus_port": "e0a",
+              "clus_mtu": "9000",
+              "clus_ip": "169.254.200.16",
+              "clus_mask": "255.255.0.0",
+              "clus_gw": "169.254.0.1",
+              "lif_name": "clus1"
+            },
+            {
+              "clus_mtu": "9000",
+              "clus_ip": "169.254.233.162",
+              "clus_mask": "255.255.0.0",
+              "clus_gw": "169.254.0.1",
+              "clus_port": "e1a",
+              "lif_name": "clus2"
+            }
+          ],
+          "aggregates": [
+            {
+              "name": "r2d2_aggr1",
+              "disk_count": 34
+            }
+          ]
+        }
+      ],
+      "svms": [
+        {
+          "name": "r2d2-fc",
+          "root_partition": "r2d2_fc_root",
+          "lifs": [
+            {
+              "name": "n1_lif1",
+              "node": "r2d2-01",
+              "port": "1a"
+            },
+            {
+              "name": "n1_lif2",
+              "node": "r2d2-01",
+              "port": "1b"
+            },
+            {
+              "name": "n1_lif3",
+              "node": "r2d2-01",
+              "port": "1c"
+            },
+            {
+              "name": "n1_lif4",
+              "node": "r2d2-01",
+              "port": "1d"
+            },
+            {
+              "name": "n2_lif1",
+              "node": "r2d2-02",
+              "port": "1a"
+            },
+            {
+              "name": "n2_lif2",
+              "node": "r2d2-02",
+              "port": "1b"
+            },
+            {
+              "name": "n2_lif3",
+              "node": "r2d2-02",
+              "port": "1c"
+            },
+            {
+              "name": "n2_lif4",
+              "node": "r2d2-02",
+              "port": "1d"
+            }
+          ],
+          "igroups": [
+            {
+              "name": "Production",
+              "os_type": "vmware",
+              "wwpns": [
+                "10:00:00:10:9b:c4:27:b4",
+                "10:00:00:10:9b:c4:27:b5",
+                "10:00:00:10:9b:c4:41:93",
+                "10:00:00:10:9b:c4:41:94"
+              ]
+            },
+            {
+              "name": "opamux1460",
+              "os_type": "linux",
+              "wwpns": [
+                "51:40:2e:c0:14:86:b6:58",
+                "51:40:2e:c0:14:86:b6:5a"
+              ]
+            },
+            {
+              "name": "opamux1486",
+              "os_type": "linux",
+              "wwpns": [
+                "51:40:2e:c0:14:86:b6:68",
+                "51:40:2e:c0:14:86:b6:6a"
+              ]
+            }
+          ],
+          "luns": [
+            {
+              "name": "STOR01_OPAMUX1460_01",
+              "size": 175,
+              "size_unit": "mb",
+              "aggregate": "r2d2_aggr1",
+              "igroup": "opamux1460",
+              "os_type": "linux"
+            },
+            {
+              "name": "STOR01_Production_01",
+              "size": 20,
+              "size_unit": "mb",
+              "aggregate": "r2d2_aggr1",
+              "igroup": "Production",
+              "os_type": "vmware"
+            }
+          ]
+        },
+        {
+          "name": "r2d2-ad",
+          "root_partition": "r2d2_ad_root",
+          "lifs": [
+            {
+              "name": "r2d2-ad-mgmt",
+              "node": "r2d2-01",
+              "port": "e0m",
+              "ip": "100.114.36.11",
+              "gateway": "100.114.36.254",
+              "netmask": "255.255.255.0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "c3po",
+      "cluster_mgmt": "c3po.slash.local",
+      "cluster_mgmt_port": "e0M",
+      "gateway": "10.114.54.254",
+      "ontap_ver": "9.9",
+      "subnet": "255.255.255.0",
+      "switchless": "1",
+      "ntp": [
+        "100.114.54.254"
+      ],
+      "nodes": [
+        {
+          "name": "c3po-01",
+          "mgmt_ip": "100.114.54.1",
+          "mgmt_subnet": "255.255.255.0",
+          "mgmt_gateway": "100.114.54.254",
+          "sp": "100.114.54.3",
+          "sp_username": "admin",
+          "sp_password": "Netapp12",
+          "sp_subnet": "255.255.255.0",
+          "sp_gateway": "100.114.54.254",
+          "cluster_ports": [
+            {
+              "clus_port": "e0a",
+              "clus_mtu": "9000",
+              "clus_ip": "169.254.200.16",
+              "clus_mask": "255.255.0.0",
+              "clus_gw": "169.254.0.1",
+              "lif_name": "clus1"
+            },
+            {
+              "clus_mtu": "9000",
+              "clus_ip": "169.254.233.162",
+              "clus_mask": "255.255.0.0",
+              "clus_gw": "169.254.0.1",
+              "clus_port": "e1a",
+              "lif_name": "clus2"
+            }
+          ],
+          "aggregates": [
+            {
+              "name": "c3po_aggr1",
+              "disk_count": 23
+            }
+          ]
+        }
+      ],
+      "svms": [
+        {
+          "name": "c3po-fc",
+          "root_partition": "c3po_fc_root",
+          "lifs": [
+            {
+              "name": "n1_lif1",
+              "node": "c3po-01",
+              "port": "5a"
+            },
+            {
+              "name": "n1_lif2",
+              "node": "c3po-01",
+              "port": "5b"
+            },
+            {
+              "name": "n1_lif3",
+              "node": "c3po-01",
+              "port": "5c"
+            },
+            {
+              "name": "n1_lif4",
+              "node": "c3po-01",
+              "port": "5d"
+            },
+            {
+              "name": "n2_lif1",
+              "node": "c3po-02",
+              "port": "5a"
+            },
+            {
+              "name": "n2_lif2",
+              "node": "c3po-02",
+              "port": "5b"
+            },
+            {
+              "name": "n2_lif3",
+              "node": "c3po-02",
+              "port": "5c"
+            },
+            {
+              "name": "n2_lif4",
+              "node": "c3po-02",
+              "port": "5d"
+            }
+          ],
+          "igroups": [
+            {
+              "name": "Production",
+              "os_type": "vmware",
+              "wwpns": [
+                "10:00:00:10:9b:c4:27:b4",
+                "10:00:00:10:9b:c4:27:b5",
+                "10:00:00:10:9b:c4:41:93",
+                "10:00:00:10:9b:c4:41:94"
+              ]
+            }
+          ],
+          "luns": [
+            {
+              "name": "STOR02_Production_01",
+              "size": 20,
+              "size_unit": "mb",
+              "aggregate": "c3po_aggr1",
+              "igroup": "Production",
+              "os_type": "vmware"
+            }
+          ]
+        },
+        {
+          "name": "c3po-ad",
+          "root_partition": "c3po_ad_root",
+          "lifs": [
+            {
+              "name": "c3po-ad-mgmt",
+              "node": "c3po-01",
+              "port": "e0m",
+              "ip": "100.114.54.11",
+              "gateway": "100.114.54.254",
+              "netmask": "255.255.255.0"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

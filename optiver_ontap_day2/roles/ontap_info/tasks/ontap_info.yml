@@ -1,41 +1,27 @@
 ---
-# sacar countVolume en role aparte, por ejemplo role/ontap_info
-# scar node_from_aggregate como en day 1 en rol aparte
-# sacar count_cluster como en day 1
-# sacar countSvm como en day 1
-# el countSvm debemos filtrarlo por svm de tipo datos y extraer todo el nombre excepto el número final, 01, 02, 03...
-# asegurarse de que no existe
-# - debug: var=volume_name_base
-# - debug: var=volume_name_base_short
-# - meta: end_play
+
+- set_fact:
+    auth: &auth
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+
 - name: Get existing volume info
   netapp.ontap.na_ontap_info:
     state: info
     gather_subset: "volume_info"
-    hostname: "{{ netapp_hostname }}"
-    username: "{{ netapp_username }}"
-    password: "{{ netapp_password }}"
-    https: true
-    validate_certs: false
+    <<: *auth
   register: volumes
   delegate_to: localhost
-
-#- debug:
-#    msg: "{{ item.value.volume_id_attributes.containing_aggregate_name }}"
-#  loop: "{{ volumes.ontap_info.volume_info | dict2items }}"
-#  when: "'o_00' in item.key"
-
 
 ### Get node number from aggregate
 - name: Get existing aggregate info
   netapp.ontap.na_ontap_info:
     state: info
     gather_subset: "aggregate_info"
-    hostname: "{{ netapp_hostname }}"
-    username: "{{ netapp_username }}"
-    password: "{{ netapp_password }}"
-    https: true
-    validate_certs: false
+    <<: *auth
   register: aggregates
   delegate_to: localhost
 
@@ -156,12 +142,8 @@
 - name: Get existing svms in the cluster to stablish countSvm var
   netapp.ontap.na_ontap_info:
     state: info
-    hostname: "{{ netapp_hostname }}"
-    username: "{{ netapp_username }}"
-    password: "{{ netapp_password }}"
-    https: true
-    validate_certs: false
     gather_subset: "vserver_info"
+    <<: *auth
   register: vserverinfo
   delegate_to: localhost
 
@@ -186,12 +168,8 @@
 - name: Get existing igroup info in the cluster to stablish countIgroup var
   netapp.ontap.na_ontap_info:
     state: info
-    hostname: "{{ netapp_hostname }}"
-    username: "{{ netapp_username }}"
-    password: "{{ netapp_password }}"
-    https: true
-    validate_certs: false
     gather_subset: "igroup_info"
+    <<: *auth
   register: igroupinfo
   delegate_to: localhost
 
@@ -245,12 +223,8 @@
 - name: Get existing lun info in the cluster to stablish countLun var
   netapp.ontap.na_ontap_info:
     state: info
-    hostname: "{{ netapp_hostname }}"
-    username: "{{ netapp_username }}"
-    password: "{{ netapp_password }}"
-    https: true
-    validate_certs: false
     gather_subset: "lun_info"
+    <<: *auth
   register: luninfo
   delegate_to: localhost
 
@@ -322,7 +296,7 @@
 - name: Set final countLun
   ansible.builtin.set_fact:
     countLun: "{{ countLun[0:2] }}"
-# 
+#
 #
 # - ansible.builtin.debug:
 #     var: aggregate_list

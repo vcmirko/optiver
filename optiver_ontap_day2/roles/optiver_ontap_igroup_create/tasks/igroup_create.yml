@@ -12,7 +12,7 @@
     state: present
     name: "{{ igroup_name }}"
     initiator_group_type: fcp
-    ostype: linux
+    ostype: "{{ igroup_type }}"
     vserver: "{{ svm_name }}"
     <<: *auth
   when:
