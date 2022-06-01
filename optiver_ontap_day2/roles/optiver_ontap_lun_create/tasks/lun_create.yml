@@ -1,0 +1,23 @@
+- set_fact:
+    auth: &auth
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+
+### 05
+- name: Create LUN
+  netapp.ontap.na_ontap_lun:
+    state: present
+    name: "{{ lun_name }}"
+    flexvol_name: "{{ volume_name }}"
+    vserver: "{{ svm_name }}"
+    size: "{{ lun_size }}"
+    size_unit: "{{ size_unit }}"
+    ostype: "{{ ostype }}"
+    space_reserve: "{{ space_reserve }}"
+    space_allocation: "{{ space_allocation }}"
+    <<: *auth
+  delegate_to: localhost
+  when: use != "nfs"

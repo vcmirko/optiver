@@ -1,0 +1,46 @@
+---
+### 07
+- name: Retrieve New Lun Info
+  netapp.ontap.na_ontap_command:
+    hostname: "{{ netapp_hostname }}"
+    username: "{{ netapp_username }}"
+    password: "{{ netapp_password }}"
+    command: ['lun show', '-vserver', '{{ svm_name }}', '-path', '/vol/{{ volume_name }}/{{ lun_name }}', '-fields serial-hex,path,space-allocation']
+    privilege: 'admin'
+    return_dict: false
+    https: true
+    validate_certs: false
+  delegate_to: localhost
+  register: lunshow
+  when: use != "nfs"
+  
+### 08
+- name: Lun Report
+  ansible.builtin.debug:
+    msg:
+      - "Vserver Name    LUN Path    Serial Number (Hex)    Space Allocation"
+      - "-------------------------------------------------------------------"
+      - "{{ lunshow.msg | regex_search(svm_name + '.*' | string) }}"
+  when:
+    - physics_country != "ES"
+    - use != "nfs"
+
+
+- name: Send email to iaas-storage group
+  community.general.mail:
+    subtype: html
+    host: "{{ smtp_server }}"
+    subject: "{{ subject }}"
+    body: |
+      <u><h3>Vserver Name | LUN Path | Serial Number (Hex) | Space Allocation</h3></u>
+          
+      <p style="color:blue">{{ lunshow.msg | regex_search(svm_name + '.*' | string) }}</p>
+    from: "{{ smtp_from }}"
+    to:
+      - iaas-storage.group@bbva.com
+    charset: utf-8
+  delegate_to: localhost
+  when: 
+    - physics_country == "ES"
+    - use != "nfs"
+         

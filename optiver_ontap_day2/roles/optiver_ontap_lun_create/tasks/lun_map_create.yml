@@ -1,0 +1,18 @@
+- set_fact:
+    auth: &auth
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+
+### 06
+- name: Create LUN mapping
+  netapp.ontap.na_ontap_lun_map:
+    state: present
+    initiator_group_name: "{{ igroup_name }}"
+    path: "/vol/{{ volume_name }}/{{ lun_name }}"
+    vserver: "{{ svm_name }}"
+    <<: *auth
+  delegate_to: localhost
+  when: use != "nfs"

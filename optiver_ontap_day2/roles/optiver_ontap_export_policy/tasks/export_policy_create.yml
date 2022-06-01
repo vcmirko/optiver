@@ -1,0 +1,15 @@
+### 13
+- name: Create Export Policy
+  netapp.ontap.na_ontap_export_policy:
+    state: present
+    name: "{{ export_policy }}" #"ep_{{ country2 }}_{{ senv }}_{{ service }}"
+    vserver: "{{ svm_name }}"
+    hostname: "{{ netapp_hostname }}"
+    username: "{{ netapp_username }}"
+    password: "{{ netapp_password }}"
+    https: true
+    validate_certs: false
+  when:
+    - use == "nfs"
+  register: create_exp_pol
+  delegate_to: localhost

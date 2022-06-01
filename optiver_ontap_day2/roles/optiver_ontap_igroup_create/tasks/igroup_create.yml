@@ -1,0 +1,21 @@
+- set_fact:
+    auth: &auth
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+
+### 04
+- name: Create FC Igroup
+  netapp.ontap.na_ontap_igroup:
+    state: present
+    name: "{{ igroup_name }}"
+    initiator_group_type: fcp
+    ostype: linux
+    vserver: "{{ svm_name }}"
+    <<: *auth
+  when:
+    # - not igroup_name_base in igroup_list
+    - use != "nfs"
+  delegate_to: localhost

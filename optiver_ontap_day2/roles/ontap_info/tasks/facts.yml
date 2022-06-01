@@ -1,0 +1,17 @@
+---
+  - name: Set naming facts
+    ansible.builtin.set_fact:
+      ansible_python_interpreter: /usr/bin/python3
+      netapp_hostname:             "{{ cluster_name }}"
+      netapp_username:            "admin"
+      efficiency_policy:          "default"
+      percent_snapshot_space:     "5"
+      snapshot_policy:            "default"
+      ostype:                     "linux"
+      space_reserve:              false
+      space_allocation:           false
+      size_unit:                  "{{ volume_unit }}"
+      aggr_target:                "{{ aggregate_name }}"
+      volume_name:                "{{ volume_name }}"
+      lun_size:                   "{{ volume_size }}"
+    delegate_to: localhost

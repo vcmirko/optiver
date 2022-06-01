@@ -1,0 +1,19 @@
+---
+- name: "Optiver Day 2 operations"
+  hosts: localhost
+  become: true
+  gather_facts: true
+  vars_files:
+    - "vars/vaulting.yml"
+    - "vars/payload.yml"
+  roles:
+    - { role: ontap_info, qtask: facts }
+    - { role: ontap_info, qtask: ontap_info }
+    - { role: optiver_ontap_export_policy, qtask: export_policy_create, when: initiator is not defined and client_match is not defined }
+    - { role: optiver_ontap_volume_create, qtask: volume_create, when: initiator is not defined and client_match is not defined }
+    - { role: optiver_ontap_igroup_create, qtask: igroup_create, when: initiator is not defined and client_match is not defined }
+    - { role: optiver_ontap_lun_create, qtask: lun_create, when: initiator is not defined and client_match is not defined }
+    - { role: optiver_ontap_lun_create, qtask: lun_map_create, when: initiator is not defined and client_match is not defined }
+    # - { role: optiver_ontap_lun_create, qtask: report, when: initiator is not defined and client_match is not defined }
+    - { role: optiver_ontap_initiator, qtask: initiator, when: initiator is defined and client_match is not defined }
+    # - { role: optiver_ontap_export_policy, qtask: export_policy_rule, when: client_match is defined and initiator is not defined }

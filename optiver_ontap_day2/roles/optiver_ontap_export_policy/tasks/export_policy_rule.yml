@@ -1,0 +1,50 @@
+- name: Set client_match_list
+  ansible.builtin.set_fact:
+    client_match_list: "{{ client_match.split(',') }}"
+
+
+- name: Create ExportPolicyRule
+  netapp.ontap.na_ontap_export_policy_rule:
+    state: present
+    name: "{{ export_policy }}"
+    vserver: "{{ svm_name }}"
+    client_match: "{{ item }}"
+    rule_index: "{{ idx + 1 }}"
+    ro_rule: "sys"
+    rw_rule: "sys"
+    protocol: "nfs3,nfs4"
+    super_user_security: "sys"
+    allow_suid: true
+    hostname: "{{ netapp_hostname }}"
+    username: "{{ netapp_username }}"
+    password: "{{ netapp_password }}"
+  loop: "{{ client_match_list }}"
+  loop_control:
+    index_var: idx
+  when:
+    - use == "nfs"
+    - export_policy | regex_search('_{{ senv }}_')
+    - add_rule is defined
+    - remove_rule is not defined
+  register: create_exp_pol_rule
+  delegate_to: localhost
+
+
+- name: Delete ExportPolicyRule
+  netapp.ontap.na_ontap_export_policy_rule:
+    state: absent
+    name: "{{ export_policy }}"
+    client_match: "{{ item }}"
+    vserver: "{{ svm_name }}"
+    hostname: "{{ netapp_hostname }}"
+    username: "{{ netapp_username }}"
+    password: "{{ netapp_password }}"
+  loop: "{{ client_match_list }}"
+  when:
+    - use == "nfs"
+    - export_policy | regex_search('_{{ senv }}_')
+    - add_rule is not defined
+    - remove_rule is defined
+    - item == client_match
+  register: remove_exp_pol_rule
+  delegate_to: localhost

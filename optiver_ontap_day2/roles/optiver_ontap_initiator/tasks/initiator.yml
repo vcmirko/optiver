@@ -1,0 +1,69 @@
+---
+
+- set_fact:
+    auth: &auth
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+
+- name: Set initiator_list
+  ansible.builtin.set_fact:
+    initiator_list: "{{ initiator.split(',') }}"
+
+
+- name: Set alias_list
+  ansible.builtin.set_fact:
+    alias_list: "{{ alias.split(',') }}"
+  when:
+    - alias is defined
+
+
+### 09
+- name: Add initiators to igroup "{{ igroup_name }}"
+  netapp.ontap.na_ontap_igroup_initiator:
+    state: present
+    names: "{{ item }}"
+    initiator_group: "{{ igroup_name }}"
+    vserver: "{{ svm_name }}"
+    <<: *auth
+  loop: "{{ initiator_list }}"
+  when:
+    - add_initiator is defined
+    - remove_initiator is not defined
+    - use != "nfs"
+  delegate_to: localhost
+
+
+- name: Create initiator alias
+  netapp.ontap.na_ontap_command:
+    command: ['fcp wwpn-alias set -vserver {{ svm_name }} -wwpn {{ item.0 }} -alias {{ item.1 }}']
+    privilege: 'admin'
+    return_dict: false
+    <<: *auth
+  loop: "{{ initiator_list | zip(alias_list) }}"
+  delegate_to: localhost
+  register: lunshow
+  when:
+    - add_initiator is defined
+    - remove_initiator is not defined
+    - use != "nfs"
+    - alias is defined
+    - initiator_list | length == alias_list | length
+
+
+### 10
+- name: Remove initiators from "{{ igroup_name }}"
+  netapp.ontap.na_ontap_igroup_initiator:
+    state: absent
+    force_remove: yes
+    names: "{{ initiator }}"
+    initiator_group: "{{ igroup_name }}"
+    vserver: "{{ svm_name }}"
+    <<: *auth
+  when:
+    - remove_initiator is defined
+    - add_initiator is not defined
+    - use != "nfs"
+  delegate_to: localhost

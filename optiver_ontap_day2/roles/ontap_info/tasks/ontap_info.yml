@@ -1,0 +1,358 @@
+---
+# sacar countVolume en role aparte, por ejemplo role/ontap_info
+# scar node_from_aggregate como en day 1 en rol aparte
+# sacar count_cluster como en day 1
+# sacar countSvm como en day 1
+# el countSvm debemos filtrarlo por svm de tipo datos y extraer todo el nombre excepto el número final, 01, 02, 03...
+# asegurarse de que no existe
+# - debug: var=volume_name_base
+# - debug: var=volume_name_base_short
+# - meta: end_play
+- name: Get existing volume info
+  netapp.ontap.na_ontap_info:
+    state: info
+    gather_subset: "volume_info"
+    hostname: "{{ netapp_hostname }}"
+    username: "{{ netapp_username }}"
+    password: "{{ netapp_password }}"
+    https: true
+    validate_certs: false
+  register: volumes
+  delegate_to: localhost
+
+#- debug:
+#    msg: "{{ item.value.volume_id_attributes.containing_aggregate_name }}"
+#  loop: "{{ volumes.ontap_info.volume_info | dict2items }}"
+#  when: "'o_00' in item.key"
+
+
+### Get node number from aggregate
+- name: Get existing aggregate info
+  netapp.ontap.na_ontap_info:
+    state: info
+    gather_subset: "aggregate_info"
+    hostname: "{{ netapp_hostname }}"
+    username: "{{ netapp_username }}"
+    password: "{{ netapp_password }}"
+    https: true
+    validate_certs: false
+  register: aggregates
+  delegate_to: localhost
+
+
+- name: Set aggregate_list
+  ansible.builtin.set_fact:
+    aggregate_list: >-
+        {{
+          aggregate_list | default([]) + [{
+            'node': item.value['nodes']['node_name'],
+            'aggr': item.value.aggregate_name,
+            'ocup': item.value['aggr_volume_count_attributes']['flexvol_count']
+          }]
+        }}
+  loop: "{{ aggregates.ontap_info.aggregate_info | dict2items }}"
+  loop_control:
+    label: "{{ item.value.aggregate_name }}"
+  when:
+#    - item.value['aggr_volume_count_attributes']['flexvol_count'] | min
+    - aggr_target in item.key
+    - aggr_target in item.value.aggregate_name
+  delegate_to: localhost
+
+
+- name: Sort aggregate_list
+  ansible.builtin.set_fact:
+    aggregate_list: "{{  aggregate_list }}"
+
+
+- name: Set aggregate_name
+  ansible.builtin.set_fact:
+    aggregate_name: >-
+      {%- if aggregate_list | length == 2 -%}
+          {%- if aggregate_list.0.ocup | int <= aggregate_list.1.ocup | int -%}
+            {{ aggregate_list.0.aggr }}
+          {%- else -%}
+            {{ aggregate_list.1.aggr }}
+          {%- endif -%}
+      {%- endif -%}
+  delegate_to: localhost
+
+
+- name: Set countNode and node_from_aggregate
+  ansible.builtin.set_fact:
+    node_from_aggregate: "{{ item.value['nodes']['node_name'][-2:]  }}"
+    countNode: "{{ item.value['nodes']['node_name'][-2:]  }}"
+  loop: "{{ aggregates.ontap_info.aggregate_info | dict2items }}"
+  loop_control:
+    label: "{{ item.value['nodes']['node_name'] }}"
+  when: item.key == aggregate_name
+  delegate_to: localhost
+
+
+- name: Initialize vol_list
+  ansible.builtin.set_fact:
+    vol_list: []
+  loop: "{{ volumes.ontap_info.volume_info | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  # when: volume_name_base_short not in item.key
+  delegate_to: localhost
+
+
+- name: Set existing volume list
+  ansible.builtin.set_fact:
+    vol_list: "{{ vol_list | default([]) + [item.value['volume_id_attributes']['name']] }}"
+  loop: "{{ volumes.ontap_info.volume_info | dict2items }}"
+  loop_control:
+    label: "{{ item.value['volume_id_attributes']['name'] }}"
+  when:
+    - item.value['volume_id_attributes']['style_extended'] != "flexgroup"
+    - item.value['volume_id_attributes']['containing_aggregate_name']
+    # - volume_name_base_short in item.value['volume_id_attributes']['name']
+  delegate_to: localhost
+
+
+- name: Initialize vol_num_list
+  ansible.builtin.set_fact:
+    vol_num_list: []
+  when: vol_list | length | int == 0
+  delegate_to: localhost
+
+
+- name: Set vol_num_list
+  ansible.builtin.set_fact:
+    vol_num_list: "{{ vol_num_list | default([]) + [item[-2:]] }}"
+  loop: "{{ vol_list }}"
+
+
+- name: Set countVolume
+  ansible.builtin.set_fact:
+    countVolume: >-
+      {%- if vol_list | length | int == 0 -%}
+        0{{ vol_list | length | int + 1 }}
+      {%- elif vol_num_list | max | int > vol_list | length | int -%}
+        {% for x in vol_num_list | sort %}
+          {%- if (loop.index | int) < x | int and loop.index | int <= 8 -%}
+            0{{ (loop.index|int) }}
+          {%- elif (loop.index | int) < x | int and loop.index | int >= 9 -%}
+            {{ (loop.index|int) }}
+          {%- endif -%}
+        {% endfor %}
+      {%- else -%}
+        {%- if vol_num_list | max | int <= 8 -%}
+          0{{ vol_list | length | int + 1 }}
+        {%- elif vol_num_list | max | int >= 9 -%}
+          {{ vol_list | length | int + 1 }}
+        {%- endif -%}
+      {%- endif -%}
+  delegate_to: localhost
+
+
+- name: Set final countVolume
+  ansible.builtin.set_fact:
+    countVolume: "{{ countVolume[0:2] }}"
+
+
+- name: Get existing svms in the cluster to stablish countSvm var
+  netapp.ontap.na_ontap_info:
+    state: info
+    hostname: "{{ netapp_hostname }}"
+    username: "{{ netapp_username }}"
+    password: "{{ netapp_password }}"
+    https: true
+    validate_certs: false
+    gather_subset: "vserver_info"
+  register: vserverinfo
+  delegate_to: localhost
+
+
+- name: Set existing svm_list
+  ansible.builtin.set_fact:
+    svm_list: "{{ svm_list | default([]) + [item.value['vserver_name']] }}"
+  loop: "{{ vserverinfo.ontap_info.vserver_info | dict2items }}"
+  loop_control:
+    label: "{{ item.value['vserver_name'] }}"
+  when:
+    - item.value['vserver_type'] == 'data'
+    # - svm_name_base in item.value['vserver_name']
+  delegate_to: localhost
+
+
+- name: Sort svm_list
+  ansible.builtin.set_fact:
+    svm_list: "{{ svm_list|sort }}"
+
+
+- name: Get existing igroup info in the cluster to stablish countIgroup var
+  netapp.ontap.na_ontap_info:
+    state: info
+    hostname: "{{ netapp_hostname }}"
+    username: "{{ netapp_username }}"
+    password: "{{ netapp_password }}"
+    https: true
+    validate_certs: false
+    gather_subset: "igroup_info"
+  register: igroupinfo
+  delegate_to: localhost
+
+
+- name: Set igroupinfo as dict
+  ansible.builtin.set_fact:
+    igroupinfo: {}
+  when: not igroupinfo.ontap_info.igroup_info
+  delegate_to: localhost
+
+#
+# - name: Initialize igroup_list
+#   ansible.builtin.set_fact:
+#     igroup_list: >-
+#       {%- if igroupinfo|length == 0 -%}
+#         []
+#       {%- endif -%}
+#   delegate_to: localhost
+#   #       {%- elif igroupinfo|length > 0 and igroup_name_base not in igroupinfo.ontap_info.igroup_info -%}          []
+
+
+- name: Set existing igroup_list
+  ansible.builtin.set_fact:
+    igroup_list: "{{ igroup_list | default([]) + [item.value['initiator_group_name']] }}"
+  loop: "{{ igroupinfo.ontap_info.igroup_info | default(igroupinfo) | dict2items }}"
+  loop_control:
+    label: "{{ item.value['initiator_group_name'] }}"
+  when:
+    - igroupinfo.ontap_info.igroup_info
+    # - igroup_name_base in item.key
+    # - igroup_name_base in item.value['initiator_group_name']
+  delegate_to: localhost
+
+
+- name: Sort igroup_list
+  ansible.builtin.set_fact:
+    igroup_list: "{{ igroup_list|sort }}"
+
+
+- name: Set countIgroup
+  ansible.builtin.set_fact:
+    countIgroup: >-
+      {%- if igroup_list | length | int < 1 -%}
+        0{{ igroup_list | length | int + 1 }}
+      {%- elif igroup_list | length | int == 1 -%}
+        0{{ igroup_list | length | int }}
+      {%- endif -%}
+  delegate_to: localhost
+
+
+- name: Get existing lun info in the cluster to stablish countLun var
+  netapp.ontap.na_ontap_info:
+    state: info
+    hostname: "{{ netapp_hostname }}"
+    username: "{{ netapp_username }}"
+    password: "{{ netapp_password }}"
+    https: true
+    validate_certs: false
+    gather_subset: "lun_info"
+  register: luninfo
+  delegate_to: localhost
+
+
+- name: Set luninfo as dict
+  ansible.builtin.set_fact:
+    luninfo: {}
+  when: not luninfo.ontap_info.lun_info
+  delegate_to: localhost
+
+#
+# - name: Initialize lun_list
+#   ansible.builtin.set_fact:
+#     lun_list: >-
+#       {%- if luninfo|length == 0 -%}
+#         []
+#       {%- endif -%}
+#   delegate_to: localhost
+
+
+- name: Set existing lun_list
+  ansible.builtin.set_fact:
+    lun_list: "{{ lun_list | default([]) + [item.value['path'].split('/')[-1]] }}"
+  loop: "{{ luninfo.ontap_info.lun_info | default(luninfo) | dict2items }}"
+  loop_control:
+    label: "{{ item.value['path'] }}"
+  when:
+    - luninfo.ontap_info.lun_info
+    # - lun_name_base_short in item.value['path']
+  delegate_to: localhost
+
+
+- name: Initialize lun_num_list
+  ansible.builtin.set_fact:
+    lun_num_list: []
+  when: lun_list | length | int == 0
+  delegate_to: localhost
+
+
+- name: Set lun_num_list
+  ansible.builtin.set_fact:
+    lun_num_list: "{{ lun_num_list | default([]) + [item[-2:]] }}"
+  loop: "{{ lun_list }}"
+
+
+- name: Set countLun
+  ansible.builtin.set_fact:
+    countLun: >-
+      {%- if lun_list | length | int == 0 -%}
+        0{{ lun_list | length | int + 1 }}
+      {%- elif lun_num_list | max | int > lun_list | length | int -%}
+        {% for x in lun_num_list | sort %}
+          {%- if (loop.index | int) < x | int and loop.index | int <= 8 -%}
+            0{{ (loop.index|int) }}
+          {%- elif (loop.index | int) < x | int and loop.index | int >= 9 -%}
+            {{ (loop.index|int) }}
+          {%- endif -%}
+        {% endfor %}
+      {%- else -%}
+        {%- if lun_num_list | max | int <= 8 -%}
+          0{{ lun_list | length | int + 1 }}
+        {%- elif lun_num_list | max | int >= 9 -%}
+          {{ lun_list | length | int + 1 }}
+        {%- endif -%}
+      {%- endif -%}
+  delegate_to: localhost
+
+
+- name: Set final countLun
+  ansible.builtin.set_fact:
+    countLun: "{{ countLun[0:2] }}"
+# 
+#
+# - ansible.builtin.debug:
+#     var: aggregate_list
+# - ansible.builtin.debug:
+#     var: aggregate_name
+# - ansible.builtin.debug:
+#     var: node_from_aggregate
+# - ansible.builtin.debug:
+#     var: countNode
+# - ansible.builtin.debug:
+#     var: vol_list
+# - ansible.builtin.debug:
+#     var: vol_num_list
+# - ansible.builtin.debug:
+#     var: countVolume
+# - ansible.builtin.debug:
+#     var: svm_list
+# - ansible.builtin.debug:
+#     var: countSvm
+# - ansible.builtin.debug:
+#     var: igroup_list
+# - ansible.builtin.debug:
+#     var: countIgroup
+# - ansible.builtin.debug:
+#     var: lun_list
+# - ansible.builtin.debug:
+#     var: countLun
+# - ansible.builtin.debug:
+#     var: svm_name
+# - ansible.builtin.debug:
+#     var: volume_name
+# - ansible.builtin.debug:
+#     var: lun_name
