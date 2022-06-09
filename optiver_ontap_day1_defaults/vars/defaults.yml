@@ -1,0 +1,11 @@
+snapshot_policies:
+  - name: my_policy
+    schedule: daily
+    count: 5
+
+# https://docs.ansible.com/ansible/latest/collections/netapp/ontap/na_ontap_job_schedule_module.html
+job_schedules:
+  - name: 5minuteMonday
+    job_days_of_week: 1
+    job_hours: -1
+    job_minutes: 0,5,10,15,20,25,30,35,40,45,50,55

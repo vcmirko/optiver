@@ -1,0 +1,28 @@
+---
+## Naming facts
+# - name: Set naming facts
+#   ansible.builtin.set_fact:
+#     netapp_hostname:   "{{ vars[availability_zone][cls]['cl_mgm_lif']  }}"
+#     country:           "{{ vars[availability_zone][cls]['country'] }}"
+#     country2:          "{{ vars[availability_zone][cls]['country2'] }}"
+#     datacenter:        "{{ vars[availability_zone][cls]['datacenter'] }}"
+#     penv:              "{{ vars[availability_zone][cls]['penv'] }}"
+#     senv:              "{{ vars[availability_zone][cls]['senv'] }}"
+#     use:               "{{ vars[availability_zone][cls]['use'] }}"
+#     service:           "{{ vars[availability_zone][cls]['service'] }}"
+#     route:             "{{ routes[senv] }}"
+#
+#
+# ## Broadcast Domain
+# ########  COMENTADO POR DUPLICIDAD CON DAY 0, BORRAR SI NO FALLA
+# # - name: Set broadcats_domain
+# #   ansible.builtin.set_fact:
+# #     broadcast_domain: "{{ broadcast_domain|default([]) + [ 'bd_' + country + '_' + item ] }}"
+# #   loop: "{{ vlans | flatten }}"
+# #   when:
+# #     - allowed_protocols == "nfs"
+# #   delegate_to: localhost
+#
+#
+#   #- debug:
+#   #    msg: "{{ hostvars[inventory_hostname]['ansible_facts']['ansible_local']['physics']['country'] }}"

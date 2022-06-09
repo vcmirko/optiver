@@ -1,0 +1,15 @@
+---
+## Naming facts
+- name: Set naming facts
+  ansible.builtin.set_fact:
+    # ansible_python_interpreter:   /usr/bin/python3
+    netapp_hostname:              "{{ cluster_name }}"
+    netapp_username:              "admin"
+    svm_name:                     "{{ svm.name }}"
+    allowed_protocols:            "{{ svm.allowed_protocols }}"
+    svm_root_volume:              "{{ svm.root_partition }}"
+    svm_root_volume_aggregate:    "{{ svm.root_volume_aggregate }}"
+    svm_root_volume_security_style: "{{ svm.root_volume_security_style }}"
+    svm_default_snapshot_policy:  "{{ svm_default_snapshot_policy }}"
+    lifs_list:                    "{{ lifs }}"
+  delegate_to: localhost

@@ -1,0 +1,12 @@
+---
+- name: "Optiver Day 1 Operations"
+  hosts: localhost
+  become: false
+  gather_facts: false
+  vars_files:
+    - "vars/vaulting.yml"
+    - "vars/defaults.yml"
+
+  roles:
+    - { role: optiver_ontap_defaults, qtask: facts }
+    - { role: optiver_ontap_defaults, qtask: deploy }

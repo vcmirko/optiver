@@ -1,0 +1,142 @@
+---
+
+- set_fact:
+    auth: &auth
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+
+### 01. (Snapshot Policy)   ###
+#Snapshot Policy
+- name: Create Snapshot policy
+  netapp.ontap.na_ontap_snapshot_policy:
+    state: present
+    name: "{{ item.name }}"
+    schedule: "{{ item.schedule }}"
+    count: "{{ item.count }}"
+    enabled: True
+    <<: *auth
+  loop: "{{ snapshot_policies }}"
+  loop_control:
+    label: "{{ item.name }}"
+  ignore_errors: true
+  register: snapshot_policy
+  delegate_to: localhost
+
+## 1- Create Vlans (PARA TODOS LOS NODOS DEL CLUSTER!!!!!) Si el modulo le da el nombre intgrpname-vlanid se hace con modulo, si no con comando: network port vlan create –node node_name -vlan-name vlan_name
+# - name: create VLANs
+#   netapp.ontap.na_ontap_net_vlan:
+#     state: present
+#     vlanid: "{{ item.vlan_id }}"
+#     node: "{{ item.node_name }}"
+#     parent_interface: "{{ item.int_grp_name }}"
+#     username: "{{ netapp_username }}"
+#     password: "{{ netapp_password }}"
+#     hostname: "{{ netapp_hostname }}"
+#   with_items: "{{ vlans_list }}" #Resultado tarea 3 de ontap_info task
+#   delegate_to: localhost
+#   when:
+#     - allowed_protocols == "nfs"
+
+###### COMENTADO POR DUPLICIDAD CON DAY 0, BORRAR SI NO FALLA
+## 2-  Create bd si no existe
+# - name: create broadcast domain
+#   netapp.ontap.na_ontap_broadcast_domain:
+#     state: present
+#     username: "{{ netapp_username }}"
+#     password: "{{ netapp_password }}"
+#     hostname: "{{ netapp_hostname }}"
+#     name: "{{ item.1 }}"
+#     mtu: 9000
+#     #ipspace: Default
+#     ports: "{{ item.0.node_name }}:{{ item.0.vlan_name }}" #vlans ports en vlan_list. Hayy que meterlos separados de comas, o se mete uno (hay que especificar alguno para crear el bd) y se añaden los demas abajo en loop
+#   loop: "{{ vlans_list | product(broadcast_domain) | list }}"
+#   when:
+#     - allowed_protocols == "nfs"
+#     - item.1 not in bd_final_list
+#     - item.1[-3:] == item.0.vlan_id
+#   delegate_to: localhost
+
+
+# ## 3- Meter vlans en broadcast domain
+# - name: add broadcast domain ports
+#   netapp.ontap.na_ontap_broadcast_domain_ports:
+#     state: present
+#     username: "{{ netapp_username }}"
+#     password: "{{ netapp_password }}"
+#     hostname: "{{ netapp_hostname }}"
+#     broadcast_domain: "{{ item.1 }}"
+#     ports: "{{item.0.node_name }}:{{ item.0.vlan_name }}"
+#   loop: "{{ vlans_list | product(broadcast_domain) | list }}"
+#   when:
+#     - allowed_protocols == "nfs"
+#     - item.1[-3:] == item.0.vlan_id
+#   delegate_to: localhost
+
+## 02. aQoS Policy Group
+##- name: aQoS Policy Group
+##  na_ontap_qos_adaptive_policy_group:
+##   state: present
+##    name:
+##    vserver:
+##    absolute_min_iops:
+##    expected_iops:
+##    peak_iops:
+##    peak_iops_allocation:
+##    <<: *auth
+##  delegate_to: localhost
+
+### 13. Create LDAP
+## Pendiente tarea 10a
+#- name: Create LDAP
+#  na_ontap_ldap:
+#    state: present
+#    name:
+#    vserver:
+#    skip_config_validation:
+#    hostname: "{{ netapp_hostname }}"
+#    username: "{{ netapp_username }}"
+#    password: "{{ netapp_password }}"
+#    https: true
+#    validate_certs: false
+#  delegate_to: localhost
+
+### 14. (Schedule)   ### SE HACE A NIVEL CLUSTER!!!!!!!!!!
+- name: Create Job Schedule
+  na_ontap_job_schedule:
+   state: present
+   name: "{{ item.name }}"
+   job_minutes: "{{ item.job_minutes }}"
+   job_hours: "{{ item.job_hours }}"
+   job_days_of_week: "{{ item.job_days_of_week }}"
+   <<: *auth
+  with_items:
+   - "{{ job_schedules }}"
+  ignore_errors: true
+  register: job_schedule
+  delegate_to: localhost
+
+
+### 15. (Snapshot Policy Vserver)
+#Snapshot Policy
+# condicional no ejecutar si FCP
+#- name: Create Snapshot policy
+#  na_ontap_snapshot_policy:
+#    state: present
+#    name: "{{ item.name }}"
+#    schedule: "{{ item.schedule }}"
+#    vserver: "{{ svm_match | default(svm_name) }}"
+#    count: "{{ item.count }}"
+#    enabled: True
+#    hostname: "{{ netapp_hostname }}"
+#    username: "{{ netapp_username }}"
+#    password: "{{ netapp_password }}"
+#    https: true
+#    validate_certs: false
+#  with_items:
+#    - "{{ snapshot_policies }}"
+#  ignore_errors: true
+#  register: snapshot_policy
+#  delegate_to: localhost
