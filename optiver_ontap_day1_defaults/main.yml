@@ -1,5 +1,5 @@
 ---
-- name: "Optiver Day 1 Operations"
+- name: "Optiver Day 1 Default Operations"
   hosts: localhost
   become: false
   gather_facts: false

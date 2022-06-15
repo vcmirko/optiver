@@ -8,7 +8,22 @@
       https: true
       validate_certs: false
 
-### 01. (Snapshot Policy)   ###
+### 01. (Schedule)  - cluster wide
+- name: Create Job Schedule
+  na_ontap_job_schedule:
+   state: present
+   name: "{{ item.name }}"
+   job_minutes: "{{ item.job_minutes }}"
+   job_hours: "{{ item.job_hours }}"
+   job_days_of_week: "{{ item.job_days_of_week }}"
+   <<: *auth
+  with_items:
+   - "{{ job_schedules }}"
+  ignore_errors: true
+  register: job_schedule
+  delegate_to: localhost
+
+### 02. (Snapshot Policy) - cluster wide
 #Snapshot Policy
 - name: Create Snapshot policy
   netapp.ontap.na_ontap_snapshot_policy:
@@ -25,33 +40,28 @@
   register: snapshot_policy
   delegate_to: localhost
 
-## 1- Create Vlans (PARA TODOS LOS NODOS DEL CLUSTER!!!!!) Si el modulo le da el nombre intgrpname-vlanid se hace con modulo, si no con comando: network port vlan create –node node_name -vlan-name vlan_name
+## 1- Create Vlans () - vlan's can also be part of day 1, but can be diff for cluster types (diff ports etc...)... so automate or not ??
 # - name: create VLANs
 #   netapp.ontap.na_ontap_net_vlan:
 #     state: present
 #     vlanid: "{{ item.vlan_id }}"
 #     node: "{{ item.node_name }}"
 #     parent_interface: "{{ item.int_grp_name }}"
-#     username: "{{ netapp_username }}"
-#     password: "{{ netapp_password }}"
-#     hostname: "{{ netapp_hostname }}"
-#   with_items: "{{ vlans_list }}" #Resultado tarea 3 de ontap_info task
+#     <<: *auth
+#   with_items: "{{ vlans_list }}"
 #   delegate_to: localhost
 #   when:
 #     - allowed_protocols == "nfs"
 
-###### COMENTADO POR DUPLICIDAD CON DAY 0, BORRAR SI NO FALLA
-## 2-  Create bd si no existe
+## 2-  Create broadcast domains - could be day 1 automation, but better to ask netapp consultant, can quickly be complex to automate
 # - name: create broadcast domain
 #   netapp.ontap.na_ontap_broadcast_domain:
 #     state: present
-#     username: "{{ netapp_username }}"
-#     password: "{{ netapp_password }}"
-#     hostname: "{{ netapp_hostname }}"
+#     <<: *auth
 #     name: "{{ item.1 }}"
 #     mtu: 9000
 #     #ipspace: Default
-#     ports: "{{ item.0.node_name }}:{{ item.0.vlan_name }}" #vlans ports en vlan_list. Hayy que meterlos separados de comas, o se mete uno (hay que especificar alguno para crear el bd) y se añaden los demas abajo en loop
+#     ports: "{{ item.0.node_name }}:{{ item.0.vlan_name }}"
 #   loop: "{{ vlans_list | product(broadcast_domain) | list }}"
 #   when:
 #     - allowed_protocols == "nfs"
@@ -60,13 +70,11 @@
 #   delegate_to: localhost
 
 
-# ## 3- Meter vlans en broadcast domain
+# ## 3- Add more ports to broadcast domains
 # - name: add broadcast domain ports
 #   netapp.ontap.na_ontap_broadcast_domain_ports:
 #     state: present
-#     username: "{{ netapp_username }}"
-#     password: "{{ netapp_password }}"
-#     hostname: "{{ netapp_hostname }}"
+#     <<: *auth
 #     broadcast_domain: "{{ item.1 }}"
 #     ports: "{{item.0.node_name }}:{{ item.0.vlan_name }}"
 #   loop: "{{ vlans_list | product(broadcast_domain) | list }}"
@@ -96,29 +104,10 @@
 #    name:
 #    vserver:
 #    skip_config_validation:
-#    hostname: "{{ netapp_hostname }}"
-#    username: "{{ netapp_username }}"
-#    password: "{{ netapp_password }}"
-#    https: true
-#    validate_certs: false
+#    <<: *auth
 #  delegate_to: localhost
 
-### 14. (Schedule)   ### SE HACE A NIVEL CLUSTER!!!!!!!!!!
-- name: Create Job Schedule
-  na_ontap_job_schedule:
-   state: present
-   name: "{{ item.name }}"
-   job_minutes: "{{ item.job_minutes }}"
-   job_hours: "{{ item.job_hours }}"
-   job_days_of_week: "{{ item.job_days_of_week }}"
-   <<: *auth
-  with_items:
-   - "{{ job_schedules }}"
-  ignore_errors: true
-  register: job_schedule
-  delegate_to: localhost
-
-
+# snapshots policies can also be per vserver, but we use cluster wide
 ### 15. (Snapshot Policy Vserver)
 #Snapshot Policy
 # condicional no ejecutar si FCP
@@ -130,11 +119,7 @@
 #    vserver: "{{ svm_match | default(svm_name) }}"
 #    count: "{{ item.count }}"
 #    enabled: True
-#    hostname: "{{ netapp_hostname }}"
-#    username: "{{ netapp_username }}"
-#    password: "{{ netapp_password }}"
-#    https: true
-#    validate_certs: false
+#    <<: *auth
 #  with_items:
 #    - "{{ snapshot_policies }}"
 #  ignore_errors: true

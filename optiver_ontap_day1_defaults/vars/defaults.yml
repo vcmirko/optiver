@@ -1,11 +1,24 @@
+# https://docs.ansible.com/ansible/latest/collections/netapp/ontap/na_ontap_snapshot_policy_module.html
 snapshot_policies:
-  - name: my_policy
-    schedule: daily
-    count: 5
+  - name: optiver_default
+    schedule: ['optiver_hourly','optiver_daily','optiver_weekly']
+    count: [36,7,4]
+    # this will have 36 hourly snapshot, 7 daily's and 4 weekly's
 
 # https://docs.ansible.com/ansible/latest/collections/netapp/ontap/na_ontap_job_schedule_module.html
 job_schedules:
-  - name: 5minuteMonday
-    job_days_of_week: 1
-    job_hours: -1
-    job_minutes: 0,5,10,15,20,25,30,35,40,45,50,55
+  - name: optiver_hourly
+    job_days_of_week: -1 # every day
+    job_hours: -1        # every hour, but 0 (daily covers that)
+    job_minutes: 5       # on minute 5 ; 00h05, 01h05, 02h05, ...
+  - name: optiver_daily
+    job_days_of_week: -1 # every day
+    job_hours: 0         # at midnight
+    job_minutes: 10      # and 10 minutes 00h10
+  - name: optiver_weekly
+    job_days_of_week: 0  # on sunday
+    job_hours: 0         # midnight
+    job_minutes: 10      # and 15 minutes 00h15
+
+    # note : this means every day at midnight you'll have 2 snapshots (hourly & daily)
+    #        and every sunday you'll have 3 snapshots (hourly, daily and weekly)
