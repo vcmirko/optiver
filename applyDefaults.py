@@ -33,6 +33,7 @@ def main() -> None:
     repo = json.load(open('./repo.json'))
 
     for c in repo["clusters"]:
+        logger.info("Applying defaults to cluster {}".format(c["name"]))
         extravars = {
             "netapp_hostname": c["cluster_mgmt"],
             "netapp_username": "admin"
