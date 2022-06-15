@@ -18,7 +18,7 @@ job_schedules:
   - name: optiver_weekly
     job_days_of_week: 0  # on sunday
     job_hours: 0         # midnight
-    job_minutes: 10      # and 15 minutes 00h15
+    job_minutes: 15      # and 15 minutes 00h15
 
     # note : this means every day at midnight you'll have 2 snapshots (hourly & daily)
     #        and every sunday you'll have 3 snapshots (hourly, daily and weekly)
