@@ -10,3 +10,4 @@
   roles:
     - { role: optiver_ontap_defaults, qtask: facts }
     - { role: optiver_ontap_defaults, qtask: deploy }
+    - { role: optiver_ontap_defaults, qtask: password }
